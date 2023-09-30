@@ -1,0 +1,49 @@
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name_)
+doctors = [
+    {
+        "id": 1,
+        "name": "Dr. Smith",
+        "schedule": {
+            "Monday": ["18:00", "19:00"],
+            "Tuesday": ["18:30", "19:30"],
+            # ... (other days)
+        },
+        "max_patients": 5,
+    },
+   
+]
+
+appointments = []
+
+
+@app.route('/doctors', methods=['GET'])
+def get_doctors():
+    return jsonify(doctors)
+
+
+@app.route('/doctors/<int:doctor_id>', methods=['GET'])
+def get_doctor(doctor_id):
+    doctor = next((d for d in doctors if d["id"] == doctor_id), None)
+    if doctor:
+        return jsonify(doctor)
+    return jsonify({"error": "Doctor not found"}), 404
+@app.route('/appointments', methods=['POST'])
+def book_appointment():
+    data = request.json
+    doctor_id = data.get('doctor_id')
+    time_slot = data.get('time_slot')
+
+    doctor = next((d for d in doctors if d["id"] == doctor_id), None)
+    if doctor:
+        if len(appointments) < doctor["max_patients"]:
+            appointments.append({"doctor_id": doctor_id, "time_slot": time_slot})
+            return jsonify({"message": "Appointment booked successfully"})
+        else:
+            return jsonify({"error": "Doctor's schedule is full for that time slot"}), 400
+    return jsonify({"error": "Doctor not found"}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
